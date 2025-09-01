@@ -22,8 +22,6 @@ public class update extends Application {
     private Map<String, ObservableList<String>> employeeReviews = new HashMap<>();
     private boolean isHR = true;
     private Map<Integer, Employee> employeeMap = new HashMap<>();
-  
-    
 
     @Override
     public void start(Stage primaryStage) {
@@ -68,22 +66,90 @@ public class update extends Application {
             } else {
                 txtUsername.clear();
                 txtPassword.clear();
-                showEmployeeManagement(primaryStage,loginScene);
+                showEmployeeManagement(primaryStage, loginScene);
             }
         });
 
         primaryStage.setScene(loginScene);
         primaryStage.show();
-        
-      
-        
-        
-      
     }
 
-    private void showEmployeeManagement(Stage stage,Scene loginScene) {
+    private void showEmployeeManagement(Stage stage, Scene loginScene) {
         stage.setTitle("Employee Management System");
 
+        // ===== Sidebar =====
+        Button requestsBtn = new Button("Requests");
+        Button manageBtn = new Button("Manage");
+        Button employeesDash = new Button("Dashboard");
+        
+         manageBtn.setMaxWidth(Double.MAX_VALUE);
+        employeesDash.setMaxWidth(Double.MAX_VALUE);
+        requestsBtn.setMaxWidth(Double.MAX_VALUE);//7D4DD1 
+
+        requestsBtn.setStyle(
+                "-fx-background-color: #4DA1D1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
+        );
+        employeesDash.setStyle(
+                "-fx-background-color: #4D5ED1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
+        );        
+        manageBtn.setStyle(
+                "-fx-background-color: #7D4DD1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
+        );
+        Button logoutBtn = new Button("Logout");
+        logoutBtn.setMaxWidth(Double.MAX_VALUE);
+        logoutBtn.setStyle(
+                "-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
+        );
+
+        VBox sidebar = new VBox(20, requestsBtn, employeesDash,manageBtn ,logoutBtn);
+        sidebar.setPadding(new Insets(20));
+        sidebar.setStyle(
+                "-fx-background-color: #e0f7fa; -fx-border-radius: 10; -fx-background-radius: 10;"
+        );
+        sidebar.setPrefWidth(150);
+        sidebar.setAlignment(Pos.TOP_CENTER);
+
+        // ===== Main Layout =====
+        BorderPane mainLayout = new BorderPane();
+        mainLayout.setLeft(sidebar);
+
+        VBox centerContent = new VBox(); // placeholder for dynamic content
+        mainLayout.setCenter(centerContent);
+
+        Scene scene = new Scene(mainLayout, 1000, 600);
+        stage.setScene(scene);
+        stage.setHeight(1400);
+        stage.setWidth(1400);
+
+        // ===== Button Actions =====
+        employeesDash.setOnAction(e -> showDashboard(centerContent));
+        
+        manageBtn.setOnAction(e->{ showEmployeeManagement(stage, loginScene);
+            
+    });
+        
+        
+        
+        requestsBtn.setOnAction(e -> showRequests(centerContent));
+        logoutBtn.setOnAction(e -> {
+            Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to log out? ", ButtonType.YES, ButtonType.NO);
+            Optional<ButtonType> res = a.showAndWait();
+            if (res.get().equals(ButtonType.YES)) {
+                stage.setHeight(300);
+                stage.setWidth(400);
+             stage.setScene(loginScene);
+             
+            }
+               
+        });
+
+        // Show HR Management by default
+        centerContent.getChildren().clear();
+        centerContent.getChildren().add(buildHRManagement());
+    }
+
+    private VBox buildHRManagement() {
+        // ===== Input Fields =====
         TextField inputName = new TextField();
         inputName.setPromptText("Employee Name");
         TextField inputContactInfo = new TextField();
@@ -164,8 +230,6 @@ public class update extends Application {
             inputContract.clear();
             inputStatus.clear();
         });
-        BorderPane main2 =new BorderPane();
-      
 
         HBox inputSection = new HBox(12, inputName, inputContactInfo, inputTeam, inputContract, inputStatus, submitBtn);
         inputSection.setPadding(new Insets(10));
@@ -173,130 +237,157 @@ public class update extends Application {
 
         VBox mainLayout = new VBox(15, inputSection, employeeGrid);
         mainLayout.setPadding(new Insets(20));
-        
-     // ===== Left Sidebar =====
-Button requestsBtn = new Button("Requests");
-requestsBtn.setMaxWidth(Double.MAX_VALUE);
-requestsBtn.setStyle(
-    "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-);
 
-Button logoutBtn = new Button("Logout");
-logoutBtn.setMaxWidth(Double.MAX_VALUE);
-logoutBtn.setStyle(
-    "-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-);
-
-VBox sidebar = new VBox(20, requestsBtn, logoutBtn); // 20px spacing
-sidebar.setPadding(new Insets(20));
-sidebar.setStyle(
-    "-fx-background-color: #e0f7fa; " +  // soft blue background
-    "-fx-border-radius: 10; " +
-    "-fx-background-radius: 10;"
-);
-sidebar.setPrefWidth(150); // fixed width for sidebar
-sidebar.setAlignment(Pos.TOP_CENTER); // center buttons vertically
-
-      
-        main2.setLeft(sidebar);
-          main2.setCenter(mainLayout);
-      
-        
-        Scene scene = new Scene(main2, 1000, 600);
-       stage.setScene(scene);
-       
-       
-      requestsBtn.setOnAction(e -> {
-    Label lblTitle = new Label("Leave Requests");
-    lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333;");
-
-    // Headers
-    String[] headerTexts = {"Employee ID", "Employee Name", "Employee Email", "Employee Department", 
-                            "Leave Purpose", "Leave Duration", "Num of Leaves Taken", "Leaves Left", "Actions"};
-
-    GridPane gp = new GridPane();
-    gp.setPadding(new Insets(20));
-    gp.setHgap(15);
-    gp.setVgap(10);
-    gp.setStyle("-fx-background-color: #f4f4f4; -fx-border-radius: 10; -fx-background-radius: 10;");
-
-    // Add header labels
-    for (int i = 0; i < headerTexts.length; i++) {
-        Label header = new Label(headerTexts[i]);
-        header.setStyle("-fx-font-weight: bold; -fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 5;");
-        gp.add(header, i, 0);
+        return mainLayout;
     }
 
-    // Sample data: {ID, Name, Email, Dept, Purpose, Duration, Taken, Left}
-    String[][] data = {
-        {"202110", "Bob", "bob@email.com", "HR", "Vacation", "5 days", "10", "5"},
-        {"202143", "Ahmad", "ahmad@email.com", "IT", "Medical", "3 days", "8", "5"},
-        {"201953", "Omar", "omar@email.com", "Finance", "Personal", "2 days", "12", "10"},
-        {"201877", "Dania", "dania@email.com", "Marketing", "Vacation", "7 days", "15", "8"}
-    };
+    // ===== Dashboard =====
+    private void showDashboard(VBox center) {
+        center.getChildren().clear();
 
-    for (int row = 0; row < data.length; row++) {
-        // Add data columns
-        Label[] rowLabels = new Label[headerTexts.length];
-        for (int col = 0; col < data[row].length; col++) {
-            Label lbl = new Label(data[row][col]);
-            lbl.setStyle("-fx-padding: 5;");
-            gp.add(lbl, col, row + 1);
-            rowLabels[col] = lbl; // store label for later updates
+        Label lblTitle = new Label("IT Team Dashboard");
+        lblTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        String[][] employees = {
+                {"Bob Wilson", "UI/UX Designer", "Absent", "9:30 AM", "-", "-", "-", "Friend's wedding celebration"},
+                {"Ahmad Abu Degga", "UI/UX Designer", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""},
+                {"Omar Al Sa'di", "Backend Developer", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""},
+                {"Dania Al Abadi", "Quality Assurance", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""}
+        };
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(20));
+        grid.setHgap(20);
+        grid.setVgap(20);
+
+        int col = 0, row = 0;
+
+        for (String[] emp : employees) {
+            VBox card = new VBox(8);
+            card.setPadding(new Insets(15));
+            card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #ddd;");
+            card.setPrefWidth(300);
+
+            Label nameLbl = new Label(emp[0]);
+            nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16;");
+            Label roleLbl = new Label(emp[1]);
+            roleLbl.setStyle("-fx-font-size: 12; -fx-text-fill: gray;");
+            Label statusLbl = new Label(emp[2]);
+            statusLbl.setStyle(emp[2].equals("Present") ? "-fx-text-fill: green;" : "-fx-text-fill: red; -fx-font-weight: bold;");
+
+            VBox header = new VBox(2, nameLbl, roleLbl);
+            HBox headerBox = new HBox();
+            headerBox.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(header, Priority.ALWAYS);
+            headerBox.getChildren().addAll(header, statusLbl);
+            headerBox.setSpacing(10);
+
+            card.getChildren().add(headerBox);
+
+            if (!emp[2].equals("Present") && !emp[7].isEmpty()) {
+                Label reasonLbl = new Label(emp[7]);
+                reasonLbl.setWrapText(true);
+                card.getChildren().add(reasonLbl);
+            } else {
+                GridPane timesGrid = new GridPane();
+                timesGrid.setHgap(10);
+                timesGrid.setVgap(5);
+
+                String[] timeLabels = {"In Time", "Break taken for", "Work Time", "Out Time"};
+                for (int i = 0; i < 4; i++) {
+                    timesGrid.add(new Label(timeLabels[i] + ":"), 0, i);
+                    timesGrid.add(new Label(emp[i + 3]), 1, i);
+                }
+                card.getChildren().add(timesGrid);
+            }
+
+            grid.add(card, col, row);
+            col++;
+            if (col > 1) {
+                col = 0;
+                row++;
+            }
         }
 
-        // Accept / Reject buttons
-        Button acceptBtn = new Button("✅ Accept");
-        acceptBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        Button rejectBtn = new Button("❌ Reject");
-        rejectBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        ScrollPane scroll = new ScrollPane(grid);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color: transparent;");
 
-        HBox actionBox = new HBox(8, acceptBtn, rejectBtn);
-        gp.add(actionBox, data[row].length, row + 1);
-
-        int finalRow = row; // for lambda capture
-        acceptBtn.setOnAction(ev -> {
-            // Update Num of Leaves Taken (col 6) +1
-            int taken = Integer.parseInt(rowLabels[6].getText()) + 1;
-            rowLabels[6].setText(String.valueOf(taken));
-
-            // Update Leaves Left (col 7) -1
-            int left = Integer.parseInt(rowLabels[7].getText()) - 1;
-            rowLabels[7].setText(String.valueOf(left));
-
-            // Replace buttons with Accepted label
-            Label acceptedLbl = new Label("Accepted");
-            acceptedLbl.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-            actionBox.getChildren().setAll(acceptedLbl);
-        });
-
-        rejectBtn.setOnAction(ev -> {
-            Label rejectedLbl = new Label("Rejected");
-            rejectedLbl.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-            actionBox.getChildren().setAll(rejectedLbl);
-        });
+        VBox layout = new VBox(15, lblTitle, scroll);
+        layout.setPadding(new Insets(20));
+        center.getChildren().add(layout);
     }
 
-    VBox layout = new VBox(15, lblTitle, gp);
-    layout.setPadding(new Insets(20));
+    // ===== Requests =====
+    private void showRequests(VBox center) {
+        center.getChildren().clear();
 
-    Scene leaveScene = new Scene(layout, 1000, 400);
-    stage.setScene(leaveScene);
-});
+        Label lblTitle = new Label("Leave Requests");
+        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333;");
 
-      logoutBtn.setOnAction(e->{
-      Alert a = new Alert(Alert.AlertType.CONFIRMATION,"Are you sure you want to log out? ", ButtonType.YES,ButtonType.NO);
-      Optional <ButtonType> res= a.showAndWait();
-      
-      if(res.get().equals(ButtonType.YES))
-          stage.setScene(loginScene);
-      
-          
-      });
-        
- 
+        String[] headerTexts = {"Employee ID", "Employee Name", "Employee Email", "Employee Department",
+                "Leave Purpose", "Leave Duration", "Num of Leaves Taken", "Leaves Left", "Actions"};
+
+        GridPane gp = new GridPane();
+        gp.setPadding(new Insets(20));
+        gp.setHgap(15);
+        gp.setVgap(10);
+        gp.setStyle("-fx-background-color: #f4f4f4; -fx-border-radius: 10; -fx-background-radius: 10;");
+
+        for (int i = 0; i < headerTexts.length; i++) {
+            Label header = new Label(headerTexts[i]);
+            header.setStyle("-fx-font-weight: bold; -fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 5;");
+            gp.add(header, i, 0);
+        }
+
+        String[][] data = {
+                {"202110", "Bob Wilson", "bob@email.com", "UI/UX Designer", "Vacation", "5 days", "10", "5"},
+                {"202143", "Ahmad Abu Degga", "ahmad@email.com", "UI/UX Designer", "Medical", "3 days", "8", "5"},
+                {"201953", "Omar Al Sa'di", "omar@email.com", "Backend Developer", "Personal", "2 days", "12", "10"},
+                {"201877", "Dania Al Abadi", "dania@email.com", "Quality Assurance", "Vacation", "7 days", "15", "8"}
+        };
+
+        for (int row = 0; row < data.length; row++) {
+            Label[] rowLabels = new Label[headerTexts.length];
+            for (int col = 0; col < data[row].length; col++) {
+                Label lbl = new Label(data[row][col]);
+                lbl.setStyle("-fx-padding: 5;");
+                gp.add(lbl, col, row + 1);
+                rowLabels[col] = lbl;
+            }
+
+            Button acceptBtn = new Button("✅ Accept");
+            acceptBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+            Button rejectBtn = new Button("❌ Reject");
+            rejectBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+
+            HBox actionBox = new HBox(8, acceptBtn, rejectBtn);
+            gp.add(actionBox, data[row].length, row + 1);
+
+            int finalRow = row;
+            acceptBtn.setOnAction(ev -> {
+                int taken = Integer.parseInt(rowLabels[6].getText()) + 1;
+                rowLabels[6].setText(String.valueOf(taken));
+                int left = Integer.parseInt(rowLabels[7].getText()) - 1;
+                rowLabels[7].setText(String.valueOf(left));
+                Label acceptedLbl = new Label("Accepted");
+                acceptedLbl.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                actionBox.getChildren().setAll(acceptedLbl);
+            });
+
+            rejectBtn.setOnAction(ev -> {
+                Label rejectedLbl = new Label("Rejected");
+                rejectedLbl.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                actionBox.getChildren().setAll(rejectedLbl);
+            });
+        }
+
+        VBox layout = new VBox(15, lblTitle, gp);
+        layout.setPadding(new Insets(20));
+        center.getChildren().add(layout);
     }
 
+    // ===== Employee Update & Review =====
     private void showReviewForm(String employeeName, boolean isHR) {
         Stage reviewStage = new Stage();
         reviewStage.setTitle("Reviews for " + employeeName);
@@ -308,9 +399,7 @@ sidebar.setAlignment(Pos.TOP_CENTER); // center buttons vertically
         Label title = new Label("⭐ Reviews for " + employeeName);
         title.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #222;");
 
-        ObservableList<String> reviews = employeeReviews.getOrDefault(employeeName,
-                FXCollections.observableArrayList());
-
+        ObservableList<String> reviews = employeeReviews.getOrDefault(employeeName, FXCollections.observableArrayList());
         ListView<String> reviewList = new ListView<>(reviews);
         reviewList.setPrefHeight(200);
 
