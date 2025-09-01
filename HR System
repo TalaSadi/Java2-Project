@@ -1,326 +1,412 @@
+
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.*;
 import java.util.Optional;
-import java.util.Random;
 
-public class update extends Application {
+public class Temp extends Application {
 
-    private GridPane employeeGrid = new GridPane();
-    private int nextRow = 1;
-    private Map<String, ObservableList<String>> employeeReviews = new HashMap<>();
-    private boolean isHR = true;
-    private Map<Integer, Employee> employeeMap = new HashMap<>();
+    // ===== DB config =====
+    private static final String DB_URL  = "jdbc:mysql://localhost:3306/databasejavaproject2";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "";
+
+    // ===== UI state =====
+    private Stage primary;
+    private Scene loginScene;
+    private Scene appScene;
+    private BorderPane appRoot;
+    private VBox centerContent;         // central content area reused across pages
+    private GridPane employeeGrid;      // grid used on Management page
 
     @Override
-    public void start(Stage primaryStage) {
-        primaryStage.setTitle("Employee Management System");
+    public void start(Stage stage) {
+        this.primary = stage;
+        this.loginScene = buildLoginScene();
+        stage.setScene(loginScene);
+        stage.setTitle("Employee Management System");
+        stage.show();
+    }
 
-        // ===== Login Scene =====
+    // ===== Login =====
+    private Scene buildLoginScene() {
         Label lblTitle = new Label("HR Login");
-        lblTitle.setStyle("-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #333;");
+        lblTitle.setFont(Font.font(22));
 
         TextField txtUsername = new TextField();
-        txtUsername.setPromptText("Enter your email...");
-        txtUsername.setStyle("-fx-background-radius: 15; -fx-padding: 8 12;");
+        txtUsername.setPromptText("Email (must contain @)");
 
         PasswordField txtPassword = new PasswordField();
-        txtPassword.setPromptText("Enter password");
-        txtPassword.setStyle("-fx-background-radius: 15; -fx-padding: 8 12;");
+        txtPassword.setPromptText("Password (try: 1234)");
 
         Button btnLogin = new Button("Login");
-        btnLogin.setStyle(
-                "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 8 12;"
-        );
+        btnLogin.setDefaultButton(true);
+        btnLogin.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
 
-        VBox loginBox = new VBox(15, lblTitle, txtUsername, txtPassword, btnLogin);
-        loginBox.setAlignment(Pos.CENTER);
-        loginBox.setPadding(new Insets(30));
-        loginBox.setStyle("-fx-background-color: #eef; -fx-background-radius: 20;");
-        loginBox.setEffect(new DropShadow(10, Color.GRAY));
+        VBox card = new VBox(12, lblTitle, txtUsername, txtPassword, btnLogin);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(24));
+        card.setStyle("-fx-background-color: #eef; -fx-background-radius: 12;");
 
-        StackPane loginLayout = new StackPane(loginBox);
-        loginLayout.setStyle("-fx-background-color: linear-gradient(to bottom, #e0f7fa, #ffffff);");
-        Scene loginScene = new Scene(loginLayout, 400, 300);
+        StackPane root = new StackPane(card);
+        root.setPadding(new Insets(24));
 
-        // ===== Login Action =====
         btnLogin.setOnAction(e -> {
-            String username = txtUsername.getText();
-            String password = txtPassword.getText();
-
-            if (!username.contains("@")) {
-                showAlert("Login Error", "Username must contain @");
-            } else if (!password.equals("1234")) {
-                showAlert("Login Error", "Incorrect password");
-            } else {
-                txtUsername.clear();
-                txtPassword.clear();
-                showEmployeeManagement(primaryStage, loginScene);
-            }
-        });
-
-        primaryStage.setScene(loginScene);
-        primaryStage.show();
-    }
-
-    private void showEmployeeManagement(Stage stage, Scene loginScene) {
-        stage.setTitle("Employee Management System");
-
-        // ===== Sidebar =====
-        Button requestsBtn = new Button("Requests");
-        Button manageBtn = new Button("Manage");
-        Button employeesDash = new Button("Dashboard");
-        
-         manageBtn.setMaxWidth(Double.MAX_VALUE);
-        employeesDash.setMaxWidth(Double.MAX_VALUE);
-        requestsBtn.setMaxWidth(Double.MAX_VALUE);//7D4DD1 
-
-        requestsBtn.setStyle(
-                "-fx-background-color: #4DA1D1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-        );
-        employeesDash.setStyle(
-                "-fx-background-color: #4D5ED1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-        );        
-        manageBtn.setStyle(
-                "-fx-background-color: #7D4DD1; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-        );
-        Button logoutBtn = new Button("Logout");
-        logoutBtn.setMaxWidth(Double.MAX_VALUE);
-        logoutBtn.setStyle(
-                "-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;"
-        );
-
-        VBox sidebar = new VBox(20, requestsBtn, employeesDash,manageBtn ,logoutBtn);
-        sidebar.setPadding(new Insets(20));
-        sidebar.setStyle(
-                "-fx-background-color: #e0f7fa; -fx-border-radius: 10; -fx-background-radius: 10;"
-        );
-        sidebar.setPrefWidth(150);
-        sidebar.setAlignment(Pos.TOP_CENTER);
-
-        // ===== Main Layout =====
-        BorderPane mainLayout = new BorderPane();
-        mainLayout.setLeft(sidebar);
-
-        VBox centerContent = new VBox(); // placeholder for dynamic content
-        mainLayout.setCenter(centerContent);
-
-        Scene scene = new Scene(mainLayout, 1000, 600);
-        stage.setScene(scene);
-        stage.setHeight(1400);
-        stage.setWidth(1400);
-
-        // ===== Button Actions =====
-        employeesDash.setOnAction(e -> showDashboard(centerContent));
-        
-        manageBtn.setOnAction(e->{ showEmployeeManagement(stage, loginScene);
-            
-    });
-        
-        
-        
-        requestsBtn.setOnAction(e -> showRequests(centerContent));
-        logoutBtn.setOnAction(e -> {
-            Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to log out? ", ButtonType.YES, ButtonType.NO);
-            Optional<ButtonType> res = a.showAndWait();
-            if (res.get().equals(ButtonType.YES)) {
-                stage.setHeight(300);
-                stage.setWidth(400);
-             stage.setScene(loginScene);
-             
-            }
-               
-        });
-
-        // Show HR Management by default
-        centerContent.getChildren().clear();
-        centerContent.getChildren().add(buildHRManagement());
-    }
-
-    private VBox buildHRManagement() {
-        // ===== Input Fields =====
-        TextField inputName = new TextField();
-        inputName.setPromptText("Employee Name");
-        TextField inputContactInfo = new TextField();
-        inputContactInfo.setPromptText("Contact Info");
-        TextField inputTeam = new TextField();
-        inputTeam.setPromptText("Team");
-        TextField inputContract = new TextField();
-        inputContract.setPromptText("Contract");
-        TextField inputStatus = new TextField();
-        inputStatus.setPromptText("Status");
-
-        Button submitBtn = new Button("➕ Add Employee");
-        submitBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
-
-        employeeGrid.setPadding(new Insets(15));
-        employeeGrid.setHgap(15);
-        employeeGrid.setVgap(10);
-        employeeGrid.setStyle("-fx-background-color: #f9f9f9; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-background-radius: 8;");
-
-        String headerStyle = "-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333;";
-        employeeGrid.add(makeLabel("Name", headerStyle), 0, 0);
-        employeeGrid.add(makeLabel("Contact", headerStyle), 1, 0);
-        employeeGrid.add(makeLabel("Team", headerStyle), 2, 0);
-        employeeGrid.add(makeLabel("Contract", headerStyle), 3, 0);
-        employeeGrid.add(makeLabel("Status", headerStyle), 4, 0);
-        employeeGrid.add(makeLabel("Actions", headerStyle), 5, 0);
-
-        submitBtn.setOnAction(e -> {
-            String name = inputName.getText();
-            String contact = inputContactInfo.getText();
-            String team = inputTeam.getText();
-            String contract = inputContract.getText();
-            String status = inputStatus.getText();
-
-            if (name.isEmpty()) {
-                showAlert("Error", "Name cannot be empty");
+            String u = txtUsername.getText();
+            String p = txtPassword.getText();
+            if (u == null || !u.contains("@")) {
+                alert(Alert.AlertType.ERROR, "Login Error", "Username must contain @");
                 return;
             }
-
-            Employee emp = new Employee(name, contact, team, contract, status);
-            employeeMap.put(nextRow, emp);
-
-            employeeGrid.add(makeLabel(name, ""), 0, nextRow);
-            employeeGrid.add(makeLabel(contact, ""), 1, nextRow);
-            employeeGrid.add(makeLabel(team, ""), 2, nextRow);
-            employeeGrid.add(makeLabel(contract, ""), 3, nextRow);
-            employeeGrid.add(makeLabel(status, ""), 4, nextRow);
-
-            Button updateBtn = new Button("✏️ Update");
-            updateBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
-            Button removeBtn = new Button("🗑 Remove");
-            removeBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
-            Button reviewBtn = new Button("⭐ Reviews");
-            reviewBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
-
-            HBox actions = new HBox(8, updateBtn, removeBtn, reviewBtn);
-            actions.setPadding(new Insets(5, 0, 5, 0));
-            employeeGrid.add(actions, 5, nextRow);
-
-            int currentRow = nextRow;
-
-            removeBtn.setOnAction(ev -> {
-                employeeGrid.getChildren().removeIf(node -> GridPane.getRowIndex(node) == currentRow);
-                employeeMap.remove(currentRow);
-                employeeReviews.remove(emp.name);
-            });
-
-            updateBtn.setOnAction(ev -> showUpdateDialog(emp, currentRow));
-            reviewBtn.setOnAction(ev -> showReviewForm(emp.name, isHR));
-
-            employeeReviews.put(emp.name, generateRandomReviews());
-
-            nextRow++;
-
-            inputName.clear();
-            inputContactInfo.clear();
-            inputTeam.clear();
-            inputContract.clear();
-            inputStatus.clear();
+            if (!"1234".equals(p)) {
+                alert(Alert.AlertType.ERROR, "Login Error", "Incorrect password");
+                return;
+            }
+            txtUsername.clear();
+            txtPassword.clear();
+            // go to app shell
+            if (appScene == null) appScene = buildAppScene();
+            primary.setScene(appScene);
         });
 
-        HBox inputSection = new HBox(12, inputName, inputContactInfo, inputTeam, inputContract, inputStatus, submitBtn);
-        inputSection.setPadding(new Insets(10));
-        inputSection.setStyle("-fx-background-color: #eef; -fx-background-radius: 8;");
-
-        VBox mainLayout = new VBox(15, inputSection, employeeGrid);
-        mainLayout.setPadding(new Insets(20));
-
-        return mainLayout;
+        return new Scene(root, 420, 300);
     }
 
-    // ===== Dashboard =====
-    private void showDashboard(VBox center) {
-        center.getChildren().clear();
+    // ===== App shell with persistent sidebar =====
+    private Scene buildAppScene() {
+        appRoot = new BorderPane();
+
+        // Sidebar
+        VBox sidebar = new VBox(12);
+        sidebar.setPadding(new Insets(16));
+        sidebar.setStyle("-fx-background-color: #2c3e50;");
+        sidebar.setPrefWidth(170);
+
+        Button btnDashboard = new Button("Dashboard");
+        Button btnManage    = new Button("Management");
+        Button btnRequests  = new Button("Requests");
+        Button btnLogout    = new Button("Logout");
+
+        styleSidebarBtn(btnDashboard);
+        styleSidebarBtn(btnManage);
+        styleSidebarBtn(btnRequests);
+        styleSidebarBtn(btnLogout);
+
+        btnDashboard.setOnAction(e -> showDashboard());
+        btnManage.setOnAction(e -> showManagement());
+        btnRequests.setOnAction(e -> showRequests());
+        btnLogout.setOnAction(e -> primary.setScene(loginScene));
+
+        sidebar.getChildren().addAll(btnDashboard, btnManage, btnRequests, new Separator(), btnLogout);
+
+        // Center container (swapped by page methods)
+        centerContent = new VBox();
+        centerContent.setPadding(new Insets(16));
+
+        appRoot.setLeft(sidebar);
+        appRoot.setCenter(centerContent);
+
+        // Default page
+        showDashboard();
+
+        return new Scene(appRoot, 1200, 750);
+    }
+
+    private void styleSidebarBtn(Button b) {
+        b.setMaxWidth(Double.MAX_VALUE);
+        b.setStyle("-fx-background-color: #34495e; -fx-text-fill: white; -fx-font-size: 14px;");
+    }
+
+    // ===== Page: Dashboard (read-only cards) =====
+    private void showDashboard() {
+        centerContent.getChildren().clear();
 
         Label lblTitle = new Label("IT Team Dashboard");
         lblTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
+        // Sample dashboard cards (read-only)
         String[][] employees = {
                 {"Bob Wilson", "UI/UX Designer", "Absent", "9:30 AM", "-", "-", "-", "Friend's wedding celebration"},
-                {"Ahmad Abu Degga", "UI/UX Designer", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""},
-                {"Omar Al Sa'di", "Backend Developer", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""},
-                {"Dania Al Abadi", "Quality Assurance", "Present", "9:30 AM", "9:30 AM", "9:30 AM", "-", ""}
+                {"Ahmad Abu Degga", "UI/UX Designer", "Present", "9:30 AM", "1 h", "7 h", "6:00 PM", ""},
+                {"Omar Al Sa'di", "Backend Developer", "Present", "9:20 AM", "45 m", "7 h", "5:50 PM", ""},
+                {"Dania Al Abadi", "Quality Assurance", "Present", "9:10 AM", "1 h", "7 h", "6:10 PM", ""}
         };
 
         GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setHgap(20);
-        grid.setVgap(20);
+        grid.setHgap(18);
+        grid.setVgap(18);
+        grid.setPadding(new Insets(14));
 
         int col = 0, row = 0;
-
         for (String[] emp : employees) {
             VBox card = new VBox(8);
-            card.setPadding(new Insets(15));
-            card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #ddd;");
-            card.setPrefWidth(300);
+            card.setPadding(new Insets(14));
+            card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #ddd; -fx-border-radius: 10;");
+            card.setPrefWidth(320);
 
             Label nameLbl = new Label(emp[0]);
             nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16;");
             Label roleLbl = new Label(emp[1]);
-            roleLbl.setStyle("-fx-font-size: 12; -fx-text-fill: gray;");
+            roleLbl.setStyle("-fx-text-fill: gray;");
+
             Label statusLbl = new Label(emp[2]);
             statusLbl.setStyle(emp[2].equals("Present") ? "-fx-text-fill: green;" : "-fx-text-fill: red; -fx-font-weight: bold;");
 
-            VBox header = new VBox(2, nameLbl, roleLbl);
-            HBox headerBox = new HBox();
-            headerBox.setAlignment(Pos.CENTER_LEFT);
-            HBox.setHgrow(header, Priority.ALWAYS);
-            headerBox.getChildren().addAll(header, statusLbl);
-            headerBox.setSpacing(10);
+            HBox header = new HBox(10, new VBox(2, nameLbl, roleLbl), statusLbl);
+            HBox.setHgrow(header.getChildren().get(0), Priority.ALWAYS);
 
-            card.getChildren().add(headerBox);
+            card.getChildren().add(header);
 
             if (!emp[2].equals("Present") && !emp[7].isEmpty()) {
-                Label reasonLbl = new Label(emp[7]);
-                reasonLbl.setWrapText(true);
-                card.getChildren().add(reasonLbl);
+                Label reason = new Label(emp[7]);
+                reason.setWrapText(true);
+                card.getChildren().add(reason);
             } else {
-                GridPane timesGrid = new GridPane();
-                timesGrid.setHgap(10);
-                timesGrid.setVgap(5);
-
-                String[] timeLabels = {"In Time", "Break taken for", "Work Time", "Out Time"};
+                GridPane times = new GridPane();
+                times.setHgap(10);
+                times.setVgap(4);
+                String[] timeLabels = {"In Time", "Break taken", "Work Time", "Out Time"};
                 for (int i = 0; i < 4; i++) {
-                    timesGrid.add(new Label(timeLabels[i] + ":"), 0, i);
-                    timesGrid.add(new Label(emp[i + 3]), 1, i);
+                    times.add(new Label(timeLabels[i] + ":"), 0, i);
+                    times.add(new Label(emp[i + 3]), 1, i);
                 }
-                card.getChildren().add(timesGrid);
+                card.getChildren().add(times);
             }
 
             grid.add(card, col, row);
             col++;
-            if (col > 1) {
-                col = 0;
-                row++;
-            }
+            if (col > 2) { col = 0; row++; }
         }
 
-        ScrollPane scroll = new ScrollPane(grid);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: transparent;");
-
-        VBox layout = new VBox(15, lblTitle, scroll);
-        layout.setPadding(new Insets(20));
-        center.getChildren().add(layout);
+        centerContent.getChildren().addAll(lblTitle, grid);
     }
 
-    // ===== Requests =====
-    private void showRequests(VBox center) {
-        center.getChildren().clear();
+    // ===== Page: Management (CRUD) =====
+    private void showManagement() {
+        centerContent.getChildren().clear();
+
+        Label title = new Label("Employee Management");
+        title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+
+        // Add-form
+        TextField tfName = new TextField();    tfName.setPromptText("Name");
+        TextField tfCont = new TextField();    tfCont.setPromptText("Contact");
+        TextField tfTeam = new TextField();    tfTeam.setPromptText("Team");
+        TextField tfStat = new TextField();    tfStat.setPromptText("Status");
+
+        Button addBtn = new Button("➕ Add");
+        addBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+
+        HBox addBox = new HBox(8, tfName, tfCont, tfTeam, tfStat, addBtn);
+        addBox.setAlignment(Pos.CENTER_LEFT);
+        addBox.setPadding(new Insets(10));
+
+        employeeGrid = new GridPane();
+        employeeGrid.setHgap(12);
+        employeeGrid.setVgap(8);
+        employeeGrid.setPadding(new Insets(10));
+        employeeGrid.setStyle("-fx-background-color: #f9f9f9; -fx-border-radius: 6; -fx-background-radius: 6;");
+
+        // Header row
+        String[] headers = {"ID", "Name", "Contact", "Team", "Status", "Actions"};
+        for (int i = 0; i < headers.length; i++) {
+            Label h = new Label(headers[i]);
+            h.setStyle("-fx-font-weight: bold; -fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 6;");
+            employeeGrid.add(h, i, 0);
+        }
+
+        // Load rows
+        loadEmployeesIntoGrid();
+
+        // Add new employee
+        addBtn.setOnAction(e -> {
+            String name = tfName.getText().trim();
+            String contact = tfCont.getText().trim();
+            String team = tfTeam.getText().trim();
+            String status = tfStat.getText().trim();
+
+            if (name.isEmpty()) {
+                alert(Alert.AlertType.WARNING, "Validation", "Name is required.");
+                return;
+            }
+
+            String sql = "INSERT INTO employees2 (name, contact, team, status) VALUES (?, ?, ?, ?)";
+            try (Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                 PreparedStatement pst = con.prepareStatement(sql)) {
+                pst.setString(1, name);
+                pst.setString(2, contact);
+                pst.setString(3, team);
+                pst.setString(4, status);
+                int rows = pst.executeUpdate();
+                if (rows > 0) {
+                    alert(Alert.AlertType.INFORMATION, "Success", "Employee added.");
+                    tfName.clear(); tfCont.clear(); tfTeam.clear(); tfStat.clear();
+                    loadEmployeesIntoGrid();
+                } else {
+                    alert(Alert.AlertType.ERROR, "Error", "Insert failed.");
+                }
+            } catch (Exception ex) {
+                alert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+            }
+        });
+
+        VBox page = new VBox(12, title, addBox, employeeGrid);
+        page.setPadding(new Insets(12));
+        centerContent.getChildren().add(page);
+    }
+
+    private void loadEmployeesIntoGrid() {
+        // clear old rows except header
+        employeeGrid.getChildren().removeIf(node -> {
+            Integer r = GridPane.getRowIndex(node);
+            return r != null && r > 0;
+        });
+
+        String sql = "SELECT id, name, contact, team, status FROM employees2 ORDER BY id";
+        int row = 1;
+
+        try (Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String contact = rs.getString("contact");
+                String team = rs.getString("team");
+                String status = rs.getString("status");
+
+                employeeGrid.add(new Label(String.valueOf(id)), 0, row);
+                employeeGrid.add(new Label(name), 1, row);
+                employeeGrid.add(new Label(contact == null ? "" : contact), 2, row);
+                employeeGrid.add(new Label(team == null ? "" : team), 3, row);
+                employeeGrid.add(new Label(status == null ? "" : status), 4, row);
+
+                Button btnUpd = new Button("✏ Update");
+                btnUpd.setStyle("-fx-background-color: #FFC107; -fx-text-fill: white;");
+                btnUpd.setOnAction(ev -> openUpdateDialog(id));
+
+                Button btnDel = new Button("🗑 Remove");
+                btnDel.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+                btnDel.setOnAction(ev -> deleteEmployee(id, name));
+
+                HBox actions = new HBox(8, btnUpd, btnDel);
+                employeeGrid.add(actions, 5, row);
+
+                row++;
+            }
+
+        } catch (Exception ex) {
+            alert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+        }
+    }
+
+    private void openUpdateDialog(int empId) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Update Employee (ID: " + empId + ")");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10); grid.setVgap(10);
+        grid.setPadding(new Insets(12));
+
+        TextField tfName = new TextField();
+        TextField tfCont = new TextField();
+        TextField tfTeam = new TextField();
+        TextField tfStat = new TextField();
+
+        // Load current values
+        try (Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+             PreparedStatement pst = con.prepareStatement("SELECT name, contact, team, status FROM employees2 WHERE id=?")) {
+            pst.setInt(1, empId);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    tfName.setText(rs.getString("name"));
+                    tfCont.setText(rs.getString("contact"));
+                    tfTeam.setText(rs.getString("team"));
+                    tfStat.setText(rs.getString("status"));
+                } else {
+                    alert(Alert.AlertType.ERROR, "Error", "Employee not found.");
+                    return;
+                }
+            }
+        } catch (Exception ex) {
+            alert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+            return;
+        }
+
+        grid.addRow(0, new Label("Name:"),   tfName);
+        grid.addRow(1, new Label("Contact:"),tfCont);
+        grid.addRow(2, new Label("Team:"),   tfTeam);
+        grid.addRow(3, new Label("Status:"), tfStat);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Optional<ButtonType> res = dialog.showAndWait();
+        if (res.isPresent() && res.get() == ButtonType.OK) {
+            String name = tfName.getText().trim();
+            if (name.isEmpty()) {
+                alert(Alert.AlertType.WARNING, "Validation", "Name is required.");
+                return;
+            }
+            String contact = tfCont.getText().trim();
+            String team    = tfTeam.getText().trim();
+            String status  = tfStat.getText().trim();
+
+            String sql = "UPDATE employees2 SET name=?, contact=?, team=?, status=? WHERE id=?";
+            try (Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                 PreparedStatement pst = con.prepareStatement(sql)) {
+                pst.setString(1, name);
+                pst.setString(2, contact);
+                pst.setString(3, team);
+                pst.setString(4, status);
+                pst.setInt(5, empId);
+                int updated = pst.executeUpdate();
+                if (updated > 0) {
+                    alert(Alert.AlertType.INFORMATION, "Success", "Employee updated.");
+                    loadEmployeesIntoGrid();
+                } else {
+                    alert(Alert.AlertType.WARNING, "Warning", "No rows updated.");
+                }
+            } catch (Exception ex) {
+                alert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+            }
+        }
+    }
+
+    private void deleteEmployee(int empId, String name) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Remove employee \"" + name + "\" (ID " + empId + ")?",
+                ButtonType.YES, ButtonType.NO);
+        Optional<ButtonType> r = confirm.showAndWait();
+        if (r.isPresent() && r.get() == ButtonType.YES) {
+            String sql = "DELETE FROM employees2 WHERE id=?";
+            try (Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+                 PreparedStatement pst = con.prepareStatement(sql)) {
+                pst.setInt(1, empId);
+                int del = pst.executeUpdate();
+                if (del > 0) {
+                    alert(Alert.AlertType.INFORMATION, "Success", "Employee removed.");
+                    loadEmployeesIntoGrid();
+                } else {
+                    alert(Alert.AlertType.WARNING, "Warning", "Nothing deleted.");
+                }
+            } catch (Exception ex) {
+                alert(Alert.AlertType.ERROR, "Error", ex.getMessage());
+            }
+        }
+    }
+
+    // ===== Page: Requests (sample) =====
+    private void showRequests() {
+        centerContent.getChildren().clear();
 
         Label lblTitle = new Label("Leave Requests");
         lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333;");
@@ -364,7 +450,6 @@ public class update extends Application {
             HBox actionBox = new HBox(8, acceptBtn, rejectBtn);
             gp.add(actionBox, data[row].length, row + 1);
 
-            int finalRow = row;
             acceptBtn.setOnAction(ev -> {
                 int taken = Integer.parseInt(rowLabels[6].getText()) + 1;
                 rowLabels[6].setText(String.valueOf(taken));
@@ -384,147 +469,16 @@ public class update extends Application {
 
         VBox layout = new VBox(15, lblTitle, gp);
         layout.setPadding(new Insets(20));
-        center.getChildren().add(layout);
+        centerContent.getChildren().add(layout);
     }
 
-    // ===== Employee Update & Review =====
-    private void showReviewForm(String employeeName, boolean isHR) {
-        Stage reviewStage = new Stage();
-        reviewStage.setTitle("Reviews for " + employeeName);
-
-        VBox layout = new VBox(12);
-        layout.setPadding(new Insets(20));
-        layout.setStyle("-fx-background-color: #f4f4f4;");
-
-        Label title = new Label("⭐ Reviews for " + employeeName);
-        title.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #222;");
-
-        ObservableList<String> reviews = employeeReviews.getOrDefault(employeeName, FXCollections.observableArrayList());
-        ListView<String> reviewList = new ListView<>(reviews);
-        reviewList.setPrefHeight(200);
-
-        layout.getChildren().addAll(title, reviewList);
-
-        Scene scene = new Scene(layout, 450, 350);
-        reviewStage.setScene(scene);
-        reviewStage.show();
-    }
-
-    private void showUpdateDialog(Employee emp, int row) {
-        Stage updateStage = new Stage();
-        updateStage.setTitle("Update Employee - " + emp.name);
-
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setHgap(10);
-        grid.setVgap(10);
-
-        TextField nameField = new TextField(emp.name);
-        TextField contactField = new TextField(emp.contact);
-        TextField teamField = new TextField(emp.team);
-        TextField contractField = new TextField(emp.contract);
-        TextField statusField = new TextField(emp.status);
-
-        grid.add(new Label("Name:"), 0, 0);
-        grid.add(nameField, 1, 0);
-        grid.add(new Label("Contact:"), 0, 1);
-        grid.add(contactField, 1, 1);
-        grid.add(new Label("Team:"), 0, 2);
-        grid.add(teamField, 1, 2);
-        grid.add(new Label("Contract:"), 0, 3);
-        grid.add(contractField, 1, 3);
-        grid.add(new Label("Status:"), 0, 4);
-        grid.add(statusField, 1, 4);
-
-        Button saveBtn = new Button("💾 Save");
-        saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        grid.add(saveBtn, 0, 5, 2, 1);
-
-        saveBtn.setOnAction(ev -> {
-            emp.name = nameField.getText();
-            emp.contact = contactField.getText();
-            emp.team = teamField.getText();
-            emp.contract = contractField.getText();
-            emp.status = statusField.getText();
-            refreshRow(emp, row);
-            updateStage.close();
-        });
-
-        Scene scene = new Scene(grid, 400, 300);
-        updateStage.setScene(scene);
-        updateStage.show();
-    }
-
-    private void refreshRow(Employee emp, int row) {
-        employeeGrid.getChildren().removeIf(node -> GridPane.getRowIndex(node) == row);
-        employeeGrid.add(makeLabel(emp.name, ""), 0, row);
-        employeeGrid.add(makeLabel(emp.contact, ""), 1, row);
-        employeeGrid.add(makeLabel(emp.team, ""), 2, row);
-        employeeGrid.add(makeLabel(emp.contract, ""), 3, row);
-        employeeGrid.add(makeLabel(emp.status, ""), 4, row);
-
-        Button updateBtn = new Button("✏️ Update");
-        updateBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
-        Button removeBtn = new Button("🗑 Remove");
-        removeBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
-        Button reviewBtn = new Button("⭐ Reviews");
-        reviewBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white;");
-
-        HBox actions = new HBox(8, updateBtn, removeBtn, reviewBtn);
-        actions.setPadding(new Insets(5, 0, 5, 0));
-        employeeGrid.add(actions, 5, row);
-
-        int currentRow = row;
-        removeBtn.setOnAction(ev -> {
-            employeeGrid.getChildren().removeIf(node -> GridPane.getRowIndex(node) == currentRow);
-            employeeMap.remove(currentRow);
-            employeeReviews.remove(emp.name);
-        });
-
-        updateBtn.setOnAction(ev -> showUpdateDialog(emp, row));
-        reviewBtn.setOnAction(ev -> showReviewForm(emp.name, isHR));
-    }
-
-    private ObservableList<String> generateRandomReviews() {
-        String[] sampleReviews = {
-                "Very dedicated and hardworking.",
-                "Needs improvement in communication.",
-                "Great teamwork and leadership skills.",
-                "Exceeded project expectations.",
-                "Reliable and punctual.",
-                "Struggles with deadlines sometimes."
-        };
-
-        Random rand = new Random();
-        ObservableList<String> reviews = FXCollections.observableArrayList();
-        for (int i = 0; i < 2 + rand.nextInt(2); i++) {
-            reviews.add(sampleReviews[rand.nextInt(sampleReviews.length)]);
-        }
-        return reviews;
-    }
-
-    private Label makeLabel(String text, String style) {
-        Label lbl = new Label(text);
-        lbl.setStyle(style + "; -fx-font-size: 13;");
-        return lbl;
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private static class Employee {
-        String name, contact, team, contract, status;
-        Employee(String name, String contact, String team, String contract, String status) {
-            this.name = name;
-            this.contact = contact;
-            this.team = team;
-            this.contract = contract;
-            this.status = status;
-        }
+    // ===== Utilities =====
+    private void alert(Alert.AlertType type, String title, String msg) {
+        Alert a = new Alert(type);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 
     public static void main(String[] args) {
